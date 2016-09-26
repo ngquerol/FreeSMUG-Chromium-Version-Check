@@ -1,0 +1,78 @@
+html {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content:  space-between;
+}
+
+.row > div {
+  margin: .5em;
+  white-space: nowrap;
+}
+
+.popup-title {
+  font-weight: bold;
+}
+
+.version {
+  min-width: 85px;
+  font-weight: 600;
+}
+
+.loading span {
+  animation-name: blink;
+  animation-duration: 1.4s;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+.loading span:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.loading span:nth-child(3) {
+  animation-delay: .4s;
+}
+
+@keyframes blink {
+  0% {
+    opacity: .2;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: .2;
+  }
+}
+
+.matched {
+  color: #4CAF50;
+}
+
+.matched:after {
+  content: " ✔";
+}
+
+.mismatched {
+  color: #F44336;
+}
+
+.mismatched:after {
+  content: " ✗";
+}
+
+.failed {
+  color: #757575;
+  text-decoration: underline;
+  cursor: pointer;
+  user-select: none;
+}
