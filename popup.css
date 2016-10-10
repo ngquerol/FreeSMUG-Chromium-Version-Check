@@ -2,6 +2,10 @@ html {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .column {
   display: flex;
   flex-direction: column;
@@ -73,6 +77,6 @@ html {
 .failed {
   color: #757575;
   text-decoration: underline;
-  cursor: pointer;
+  cursor: help;
   user-select: none;
 }
