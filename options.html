@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FreeSMUG Chromium Version Check Options</title>
+    <style>
+     .column {
+       display: flex;
+       flex-direction: column;
+     }
+
+     .row {
+       display: flex;
+       flex-direction: row;
+       justify-content:  space-between;
+       margin: .5em;
+     }
+    </style>
+  </head>
+  <body>
+    <div class="column">
+      <div class="row">
+        Notify new versions:
+        <label>
+          <input type="checkbox" id="notify">
+        </label>
+      </div>
+
+      <div class="row">
+        Automatically check for new versions:
+        <select id="check_frequency">
+          <option value="daily">never</option>
+          <option value="daily">daily</option>
+          <option value="weekly">weekly</option>
+          <option value="monthly">monthly</option>
+        </select>
+      </div>
+
+      <div class="row">
+        Show latest stable Chromium build:
+        <label>
+          <input type="checkbox" id="stable">
+        </label>
+      </div>
+
+      <div class="row">
+        <div id="status"></div>
+      </div>
+
+      <div class="row">
+        <button id="save">Save</button>
+      </div>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>

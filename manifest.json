@@ -1,10 +1,12 @@
-
 {
   "manifest_version": 2,
 
   "name": "FreeSMUG Chromium Version Check",
   "description": "",
   "version": "0.1",
+  "icons": {
+    "48": "images/icon.png"
+  },
 
   "browser_action": {
     "default_icon": "images/icon.png",
@@ -16,9 +18,15 @@
     "scripts": [ "background.js" ]
   },
 
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  },
+
   "permissions": [
     "background",
     "notifications",
+    "storage",
     "https://sourceforge.net/projects/osxportableapps/",
     "https://omahaproxy.appspot.com/"
   ]
