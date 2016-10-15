@@ -2,8 +2,8 @@
   "manifest_version": 2,
 
   "name": "FreeSMUG Chromium Version Check",
-  "description": "",
-  "version": "0.1",
+  "description": "Simple extension to check for new Chromium builds available at http://www.freesmug.org/chromium.",
+  "version": "0.2",
   "icons": {
     "48": "images/icon.png"
   },
