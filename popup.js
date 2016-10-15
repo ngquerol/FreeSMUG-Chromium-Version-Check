@@ -1,85 +1,79 @@
-const notificationId = "newVersionNotification";
-const notificationButtons = {
-  download: { index: 0, title: "Download", iconUrl: "images/download.png" },
-  dismiss: { index: 1, title: "Dismiss", iconUrl: "images/dismiss.png" }
-};
+const currentVersion = window.navigator.userAgent.match(/Chrome\/([\d.]+)/)[1];
 
-let notifyNewVersions;
-let showStableVersions;
-let latestDownloadUrl;
+function displayVersion(versionInfo) {
+  const versionTag = document.getElementById(versionInfo.versionType);
 
-function displayVersion(message) {
-  const versionTag = document.getElementById(message.versionType);
-  const currentVersionTag = document.getElementById("current");
-
-  if (message.error) {
+  if (versionInfo.error) {
     versionTag.textContent = "?";
     versionTag.classList.add("failed");
-    versionTag.title = "Could not retrieve " + message.versionType + " version:\n\n" + message.error;
+    versionTag.title = "Could not retrieve " + versionInfo.versionType + " version:\n\n" + versionInfo.error;
   } else {
-    versionTag.textContent = message.version;
+    versionTag.textContent = versionInfo.versionNumber;
 
-    if (message.versionType === "freesmug") {
-      latestDownloadUrl = message.downloadUrl;
-
-      currentVersionTag.classList.add(
-        message.matched ? "matched" : "mismatched"
+    if (versionInfo.versionType === "freesmug") {
+      document.getElementById("current").classList.add(
+        versionInfo.matchesStable ? "matched" : "mismatched"
       );
 
-      if (!message.matched && notifyNewVersions) { notifyVersion(message); }
+      if (!versionInfo.matchesStable) {
+        displayDownloadButton(versionInfo.downloadUrl);
+      }
     }
   }
 }
 
-function notifyVersion({ version, currentVersion }) {
-  chrome.notifications.create(notificationId, {
-    type: "basic",
-    requireInteraction: true,
-    iconUrl: "images/update.png",
-    title: "New FreeSMUG Chromium version",
-    message: "Version «" + version + "» is available.",
-    contextMessage: "You have version «" + currentVersion + "».",
-    buttons: [
-      { title: notificationButtons.download.title, iconUrl: notificationButtons.download.iconUrl },
-      { title: notificationButtons.dismiss.title, iconUrl: notificationButtons.dismiss.iconUrl }
-    ]
+function displayDownloadButton(downloadUrl) {
+  const downloadUrlRow = document.createElement("div");
+  const downloadUrlButton = document.createElement("button");
+
+  downloadUrlRow.classList.add("row");
+  downloadUrlRow.classList.add("download-row");
+  downloadUrlButton.textContent = "Download new version";
+  downloadUrlRow.appendChild(downloadUrlButton);
+
+  downloadUrlButton.addEventListener("click", _ => {
+    chrome.tabs.create({ url: downloadUrl });
+  });
+
+  document.getElementById("versions").appendChild(downloadUrlRow);
+}
+
+function fetchSettings() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(["stable"], items => {
+      const error = chrome.runtime.lastError;
+
+      if (error) {
+        reject(error);
+      } else {
+        resolve(items);
+      }
+    });
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const currentVersion = window.navigator.userAgent.match(/Chrome\/([\d.]+)/)[1];
+  document.getElementById("current").textContent = currentVersion;
 
-  let versionTypes = ["freesmug"];
+  fetchSettings().then(settings => {
+    let versions = ["freesmug"];
 
-  chrome.storage.sync.get(["notify", "stable"], items => {
-    notifyNewVersions = items.notify;
-    showStableVersions = items.stable;
-
-    document.getElementById("current").textContent = currentVersion;
-
-    if (showStableVersions) {
-      versionTypes.push("stable");
+    if (settings.stable) {
+      versions.push("stable");
       document.getElementById("stable").parentNode.classList.remove("hidden");
     } else {
       document.getElementById("stable").parentNode.classList.add("hidden");
     }
 
-    chrome.notifications.onButtonClicked.addListener((id, idx) => {
-      if (id === notificationId && idx === notificationButtons.download.index) {
-        chrome.tabs.create({ url: latestDownloadUrl });
-      }
-
-      chrome.notifications.clear(notificationId);
-    });
-
     chrome.runtime.onMessage.addListener((message, sender, _) => {
       if (message.type === "versionInfo") { displayVersion(message); }
     });
 
-    versionTypes.forEach(versionType => chrome.runtime.sendMessage({
-      type: "fetchVersion",
-      versionType: versionType,
-      currentVersion: currentVersion
-    }));
+    versions.forEach(version => {
+      chrome.runtime.sendMessage({
+        type: "fetchVersion",
+        versionType: version
+      });
+    });
   });
 });

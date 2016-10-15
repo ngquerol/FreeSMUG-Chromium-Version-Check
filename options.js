@@ -1,15 +1,9 @@
-const notify = document.getElementById("notify");
-const checkFrequency = document.getElementById("check_frequency");
-const stable = document.getElementById("stable");
-const save = document.getElementById("save");
-const status = document.getElementById("status");
-
 function saveOptions() {
   chrome.storage.sync.set({
-    notify: notify.checked,
-    checkFrequency: checkFrequency.value,
-    stable: stable.checked
+    checkFrequency: parseInt(document.getElementById("check_frequency").value, 10),
+    stable: document.getElementById("stable").checked
   }, () => {
+    const status = document.getElementById("status");
     status.textContent = "Options saved.";
     setTimeout(() => status.textContent = "", 750);
   });
@@ -17,15 +11,15 @@ function saveOptions() {
 
 function restoreOptions() {
   chrome.storage.sync.get({
-    notify: true,
     checkFrequency: "never",
     stable: true
   }, items => {
-    notify.checked = items.notify;
-    checkFrequency.value = items.checkFrequency;
-    stable.checked = items.stable;
+    document.getElementById("stable").checked = items.stable;
+    document.getElementById("check_frequency").value = items.checkFrequency;
   });
 }
 
-save.addEventListener("click", saveOptions);
-document.addEventListener("DOMContentLoaded", restoreOptions);
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("save").addEventListener("click", saveOptions);
+  restoreOptions();
+});

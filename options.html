@@ -14,24 +14,21 @@
        justify-content:  space-between;
        margin: .5em;
      }
+
+     #status {
+       font-weight: bold;
+     }
     </style>
   </head>
   <body>
     <div class="column">
       <div class="row">
-        Notify new versions:
-        <label>
-          <input type="checkbox" id="notify">
-        </label>
-      </div>
-
-      <div class="row">
         Automatically check for new versions:
         <select id="check_frequency">
-          <option value="daily">never</option>
-          <option value="daily">daily</option>
-          <option value="weekly">weekly</option>
-          <option value="monthly">monthly</option>
+          <option value="-1">never</option>
+          <option value="86400000">daily</option>
+          <option value="604800000">weekly</option>
+          <option value="18144000000">monthly</option>
         </select>
       </div>
 

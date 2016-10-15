@@ -26,6 +26,7 @@
   "permissions": [
     "background",
     "notifications",
+    "alarms",
     "storage",
     "https://sourceforge.net/projects/osxportableapps/",
     "https://omahaproxy.appspot.com/"

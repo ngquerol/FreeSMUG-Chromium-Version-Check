@@ -22,13 +22,13 @@ html {
   white-space: nowrap;
 }
 
-.popup-title {
-  font-weight: bold;
-}
-
 .version {
   min-width: 85px;
   font-weight: 600;
+}
+
+.download-row {
+  margin: .5em auto;
 }
 
 .loading span {
