@@ -34,8 +34,8 @@ function matchVersions(version1, version2) {
 
   if (v1.length !== 4 || v2.length !== 4) { return false; }
 
-  return v1.map((x, i) => [x, v2[i]])
-    .every((x, y) => parseInt(x, 10) === parseInt(y, 10));
+  return v1.map((v1elem, i) => [v1elem, v2[i]])
+    .every(vElems => parseInt(vElems[0], 10) === parseInt(vElems[1], 10));
 }
 
 function fetchStableVersion() {
