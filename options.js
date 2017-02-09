@@ -11,7 +11,7 @@ function saveOptions() {
 
 function restoreOptions() {
   chrome.storage.sync.get({
-    checkFrequency: "never",
+    checkFrequency: -1,
     stable: true
   }, items => {
     document.getElementById("stable").checked = items.stable;

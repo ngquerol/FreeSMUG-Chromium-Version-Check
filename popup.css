@@ -75,7 +75,7 @@ html {
 }
 
 .failed {
-  color: #757575;
+  color: #FFA500;
   text-decoration: underline;
   cursor: help;
   user-select: none;

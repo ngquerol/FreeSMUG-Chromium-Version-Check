@@ -31,7 +31,7 @@ function displayDownloadButton(downloadUrl) {
   downloadUrlButton.textContent = "Download new version";
   downloadUrlRow.appendChild(downloadUrlButton);
 
-  downloadUrlButton.addEventListener("click", _ => {
+  downloadUrlButton.addEventListener("click", () => {
     chrome.tabs.create({ url: downloadUrl });
   });
 
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("stable").parentNode.classList.add("hidden");
     }
 
-    chrome.runtime.onMessage.addListener((message, sender, _) => {
+    chrome.runtime.onMessage.addListener((message) => {
       if (message.type === "versionInfo") { displayVersion(message); }
     });
 
