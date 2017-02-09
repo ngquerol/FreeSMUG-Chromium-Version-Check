@@ -30,7 +30,8 @@
     "notifications",
     "alarms",
     "storage",
-    "https://sourceforge.net/projects/osxportableapps/",
+    "cookies",
+    "https://sourceforge.net/",
     "https://omahaproxy.appspot.com/"
   ]
 }

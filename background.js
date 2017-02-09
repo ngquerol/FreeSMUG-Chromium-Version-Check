@@ -3,7 +3,6 @@ const currentVersion = window.navigator.userAgent.match(/Chrome\/([\d.]+)/)[1];
 const freeSmugVersionRssUrl = "https://sourceforge.net/projects/osxportableapps/rss?path=/Chromium";
 const freeSmugVersionRegex = /Chromium_OSX_([\d.]+).dmg/;
 const stableVersionJsonUrl = "https://omahaproxy.appspot.com/all.json";
-const freedomCookie = "FreedomCookie=true;domain=sourceforge.net;path=/";
 
 const alarmId = "versionCheck";
 const notificationId = "newVersionNotification";
@@ -47,18 +46,13 @@ function fetchStableVersion() {
     const version = json.find(oses => oses.os === "mac").versions
           .find(versions => versions.channel === "stable").version;
     return version ? Promise.resolve(version) : Promise.reject("Invalid JSON response.");
-  }).catch(error => {
-    return Promise.reject(error);
   }));
 }
 
 function fetchFreeSmugVersion() {
   return timedPromise(fetchTimeout, fetch(freeSmugVersionRssUrl, {
     credentials: "include",
-    headers: {
-      accept: "application/rss+xml",
-      cookie: freedomCookie
-    }
+    headers: { accept: "application/rss+xml" }
   }).then(response => {
     return response.text()
   }).then(text => {
@@ -68,8 +62,6 @@ function fetchFreeSmugVersion() {
     const version = link.match(freeSmugVersionRegex)[1];
 
     return version ? Promise.resolve(version) : Promise.reject("Invalid XML response.");
-  }).catch(error => {
-    return Promise.reject(error);
   }));
 }
 
@@ -134,6 +126,13 @@ function notifyNewVersion(versionInfo) {
   });
 }
 
+chrome.cookies.set({
+  url: "https://sourceforge.net",
+  name: "FreedomCookie",
+  value: "true",
+  expirationDate: new Date().setFullYear(new Date().getFullYear() + 1)
+});
+
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name !== alarmId) { return; }
 
@@ -148,11 +147,11 @@ chrome.alarms.onAlarm.addListener(alarm => {
     notifyNewVersion(versionInfo);
   }).catch(error => {
     versionInfo.error = error;
-    console.error("Could not check for new " + versionInfo.versionType + " version: " + error);
+    console.error("Could not complete check routine for new " + versionInfo.versionType + " version: " + error);
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender, _) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message.type !== "fetchVersion") { return; }
 
   let versionInfo = {
@@ -171,11 +170,11 @@ chrome.runtime.onMessage.addListener((message, sender, _) => {
     chrome.runtime.sendMessage(versionInfo);
   }).catch(error => {
     versionInfo.error = error;
-    console.error("Could not check for new " + versionInfo.versionType + " version: " + error);
-  });
+    chrome.runtime.sendMessage(versionInfo);
+  })
 });
 
-chrome.storage.onChanged.addListener((changes, _) => {
+chrome.storage.onChanged.addListener(changes => {
   Object.keys(changes).forEach(item => {
     if (item === "checkFrequency") { setupCheckAlarm(settings[item]); }
     settings[item] = changes[item].newValue
@@ -185,7 +184,7 @@ chrome.storage.onChanged.addListener((changes, _) => {
 fetchSettings().then(items => {
   settings = items;
   setupCheckAlarm(settings.checkFrequency);
-}).catch(_ => {
+}).catch(() => {
   settings = {
     stable: true,
     checkFrequency: -1
