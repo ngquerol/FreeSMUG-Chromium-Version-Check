@@ -6,7 +6,7 @@ function displayVersion(versionInfo) {
   if (versionInfo.error) {
     versionTag.textContent = "?";
     versionTag.classList.add("failed");
-    versionTag.title = "Could not retrieve " + versionInfo.versionType + " version:\n\n" + versionInfo.error;
+    versionTag.title = `Could not retrieve ${versionInfo.versionType} version:\n\n${versionInfo.error}`;
   } else {
     versionTag.textContent = versionInfo.versionNumber;
 

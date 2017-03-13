@@ -5,6 +5,7 @@ const freeSmugVersionRegex = /Chromium_OSX_([\d.]+).dmg/;
 const stableVersionJsonUrl = "https://omahaproxy.appspot.com/all.json";
 
 const alarmId = "versionCheck";
+const alarmTimestampKey = "lastAutomaticVersionCheck";
 const notificationId = "newVersionNotification";
 
 const notificationButtons = {
@@ -86,32 +87,58 @@ function fetchSettings() {
   });
 }
 
-function setupCheckAlarm(checkFrequency) {
-  if (settings.checkFrequency < 0) {
+function scheduleCheck() {
+  const checkFrequency = settings.checkFrequency;
+
+  chrome.storage.local.get([alarmTimestampKey], items => {
+    const lastCheck = items[alarmTimestampKey];
+
+    if (!lastCheck || ((Date.now() - lastCheck) >= checkFrequency)) {
+      checkForNewFreeSMUGVersion();
+    }
+
     chrome.alarms.clear(alarmId);
-    return;
-  }
 
-  const checkTime = new Date(Date.now() + checkFrequency);
+    if (settings.checkFrequency < 0) {
+      return;
+    }
 
-  checkTime.setHours(0);
-  checkTime.setMinutes(0);
-  checkTime.setSeconds(0);
+    chrome.alarms.create(alarmId, {
+      when: lastCheck + checkFrequency,
+      periodInMinutes: checkFrequency / 60000
+    });
+  })
+}
 
-  chrome.alarms.create(alarmId, {
-    when: checkTime.getTime(),
-    periodInMinutes: checkTime.getTime() / 60000
+function checkForNewFreeSMUGVersion() {
+  let versionInfo = { type: "versionInfo", versionType: "freesmug" };
+
+  fetchVersion(versionInfo.versionType).then(versionNumber => {
+    let checkTimestamp = {};
+    checkTimestamp[alarmTimestampKey] = Date.now();
+    chrome.storage.local.set(checkTimestamp);
+
+    const upToDate = matchVersions(currentVersion, versionNumber);
+    if (upToDate) { return; }
+
+    versionInfo.matchesStable = upToDate;
+    versionInfo.versionNumber = versionNumber;
+
+    notifyNewFreeSMUGVersion(versionInfo);
+  }).catch(error => {
+    versionInfo.error = error;
+    console.error(`Could not complete automatic check for new ${versionInfo.versionType} version: ${error}`);
   });
 }
 
-function notifyNewVersion(versionInfo) {
+function notifyNewFreeSMUGVersion(versionInfo) {
   chrome.notifications.create(notificationId, {
     type: "basic",
     requireInteraction: true,
     iconUrl: "images/update.png",
     title: "New FreeSMUG Chromium version",
-    message: "Version «" + versionInfo.versionNumber + "» is available.",
-    contextMessage: "You have version «" + currentVersion + "».",
+    message: `Version «${versionInfo.versionNumber}» is available.`,
+    contextMessage: `You have version «${currentVersion}».`,
     buttons: [
       { title: notificationButtons.download.title, iconUrl: notificationButtons.download.iconUrl },
       { title: notificationButtons.dismiss.title, iconUrl: notificationButtons.dismiss.iconUrl }
@@ -135,29 +162,13 @@ chrome.cookies.set({
 
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name !== alarmId) { return; }
-
-  let versionInfo = {
-    type: "versionInfo",
-    versionType: "freesmug"
-  };
-
-  fetchVersion(versionInfo.versionType).then(versionNumber => {
-    versionInfo.matchesStable = matchVersions(currentVersion, versionNumber);
-    versionInfo.versionNumber = versionNumber;
-    notifyNewVersion(versionInfo);
-  }).catch(error => {
-    versionInfo.error = error;
-    console.error("Could not complete check routine for new " + versionInfo.versionType + " version: " + error);
-  });
+  checkForNewFreeSMUGVersion();
 });
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type !== "fetchVersion") { return; }
 
-  let versionInfo = {
-    type: "versionInfo",
-    versionType: message.versionType
-  };
+  let versionInfo = { type: "versionInfo", versionType: message.versionType };
 
   fetchVersion(message.versionType).then(versionNumber => {
     versionInfo.versionNumber = versionNumber;
@@ -176,14 +187,14 @@ chrome.runtime.onMessage.addListener((message) => {
 
 chrome.storage.onChanged.addListener(changes => {
   Object.keys(changes).forEach(item => {
-    if (item === "checkFrequency") { setupCheckAlarm(settings[item]); }
     settings[item] = changes[item].newValue
+    if (item === "checkFrequency") { scheduleCheck(); }
   })
 });
 
 fetchSettings().then(items => {
   settings = items;
-  setupCheckAlarm(settings.checkFrequency);
+  scheduleCheck();
 }).catch(() => {
   settings = {
     stable: true,
