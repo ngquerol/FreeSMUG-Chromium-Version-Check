@@ -4,6 +4,11 @@ const freeSmugVersionRssUrl = "https://sourceforge.net/projects/osxportableapps/
 const freeSmugVersionRegex = /Chromium_OSX_([\d.]+).dmg/;
 const stableVersionJsonUrl = "https://omahaproxy.appspot.com/all.json";
 
+const freedomCookieDetails = {
+  url: "https://sourceforge.net",
+  name: "FreedomCookie"
+};
+
 const alarmId = "versionCheck";
 const alarmTimestampKey = "lastAutomaticVersionCheck";
 const notificationId = "newVersionNotification";
@@ -15,7 +20,10 @@ const notificationButtons = {
 
 const fetchTimeout = 10000;
 
-let settings = {};
+let settings = {
+  stable: true,
+  checkFrequency: -1
+};
 
 function timedPromise(delay, promise) {
   return Promise.race([
@@ -25,7 +33,7 @@ function timedPromise(delay, promise) {
 }
 
 function formDownloadUrl(versionNumber) {
-  return "https://downloads.sourceforge.net/osxportableapps/Chromium_OSX_" + versionNumber + ".dmg"
+  return `https://downloads.sourceforge.net/osxportableapps/Chromium_OSX_${versionNumber}.dmg`
 }
 
 function matchVersions(version1, version2) {
@@ -87,7 +95,7 @@ function fetchSettings() {
   });
 }
 
-function scheduleCheck() {
+function scheduleAutomaticChecks() {
   const checkFrequency = settings.checkFrequency;
 
   chrome.storage.local.get([alarmTimestampKey], items => {
@@ -97,15 +105,11 @@ function scheduleCheck() {
       checkForNewFreeSMUGVersion();
     }
 
-    chrome.alarms.clear(alarmId);
-
-    if (settings.checkFrequency < 0) {
-      return;
-    }
+    if (settings.checkFrequency < 0) { return; }
 
     chrome.alarms.create(alarmId, {
       when: lastCheck + checkFrequency,
-      periodInMinutes: checkFrequency / 60000
+      periodInMinutes: checkFrequency / (60 * 1000)
     });
   })
 }
@@ -145,27 +149,36 @@ function notifyNewFreeSMUGVersion(versionInfo) {
     ]
   });
 
-  chrome.notifications.onButtonClicked.addListener((id, idx) => {
-    if (id === notificationId && idx === notificationButtons.download.index) {
+  chrome.notifications.onButtonClicked.addListener((id, index) => {
+    if (id === notificationId && index === notificationButtons.download.index) {
       chrome.tabs.create({ url: formDownloadUrl(versionInfo.downloadUrl) });
     }
     chrome.notifications.clear(notificationId);
   });
 }
 
-chrome.cookies.set({
-  url: "https://sourceforge.net",
-  name: "FreedomCookie",
-  value: "true",
-  expirationDate: new Date().setFullYear(new Date().getFullYear() + 1)
-});
+function setFreedomCookie() {
+  let oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(new Date().getFullYear() + 1);
+
+  chrome.cookies.get(freedomCookieDetails, cookie => {
+    if (!cookie || cookie.expirationDate <= Date.now() / 1000) {
+      chrome.cookies.set({
+        url: freedomCookieDetails.url,
+        name: freedomCookieDetails.name,
+        value: "true",
+        expirationDate: oneYearFromNow.getTime() / 1000
+      });
+    }
+  })
+}
 
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name !== alarmId) { return; }
   checkForNewFreeSMUGVersion();
 });
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(message => {
   if (message.type !== "fetchVersion") { return; }
 
   let versionInfo = { type: "versionInfo", versionType: message.versionType };
@@ -188,16 +201,14 @@ chrome.runtime.onMessage.addListener((message) => {
 chrome.storage.onChanged.addListener(changes => {
   Object.keys(changes).forEach(item => {
     settings[item] = changes[item].newValue
-    if (item === "checkFrequency") { scheduleCheck(); }
+    if (item === "checkFrequency") { scheduleAutomaticChecks(); }
   })
 });
 
-fetchSettings().then(items => {
-  settings = items;
-  scheduleCheck();
-}).catch(() => {
-  settings = {
-    stable: true,
-    checkFrequency: -1
-  };
-});
+fetchSettings()
+  .then(items => settings = items)
+  .catch(() => console.warn("Could not load settings, using defaults."))
+  .then(() => {
+    setFreedomCookie();
+    scheduleAutomaticChecks();
+  });
