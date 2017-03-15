@@ -35,7 +35,8 @@ function displayDownloadButton(downloadUrl) {
     chrome.tabs.create({ url: downloadUrl });
   });
 
-  document.getElementById("versions").appendChild(downloadUrlRow);
+  const versions = document.getElementById("versions");
+  versions.insertBefore(downloadUrlRow, versions.lastElementChild);
 }
 
 function fetchSettings() {
@@ -55,25 +56,26 @@ function fetchSettings() {
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("current").textContent = currentVersion;
 
-  fetchSettings().then(settings => {
-    let versions = ["freesmug"];
+  fetchSettings()
+    .then(settings => {
+      let versions = ["freesmug"];
 
-    if (settings.stable) {
-      versions.push("stable");
-      document.getElementById("stable").parentNode.classList.remove("hidden");
-    } else {
-      document.getElementById("stable").parentNode.classList.add("hidden");
-    }
+      if (settings.stable) {
+        versions.push("stable");
+        document.getElementById("stable").parentNode.classList.remove("hidden");
+      } else {
+        document.getElementById("stable").parentNode.classList.add("hidden");
+      }
 
-    chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === "versionInfo") { displayVersion(message); }
-    });
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.type === "versionInfo") { displayVersion(message); }
+      });
 
-    versions.forEach(version => {
-      chrome.runtime.sendMessage({
-        type: "fetchVersion",
-        versionType: version
+      versions.forEach(version => {
+        chrome.runtime.sendMessage({
+          type: "fetchVersion",
+          versionType: version
+        });
       });
     });
-  });
 });

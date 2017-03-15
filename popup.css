@@ -3,7 +3,7 @@ body {
 }
 
 .hidden {
-  display: none !important;
+  display: none;
 }
 
 .column {
@@ -23,19 +23,23 @@ body {
 }
 
 .version {
-  min-width: 85px;
   font-weight: 600;
+  width: 8em;
 }
 
 .download-row {
   margin: .5em auto;
 }
 
+.loading {
+  min-width: 82px;
+}
+
 .loading span {
-  animation-name: blink;
   animation-duration: 1.4s;
-  animation-iteration-count: infinite;
   animation-fill-mode: both;
+  animation-iteration-count: infinite;
+  animation-name: blink;
 }
 
 .loading span:nth-child(2) {
@@ -78,7 +82,7 @@ body {
 
 .failed {
   color: #FFA500;
-  text-decoration: underline;
   cursor: help;
+  text-decoration: underline;
   user-select: none;
 }
